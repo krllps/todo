@@ -4,6 +4,8 @@
 
 ## DB
 
-![SQL Model](docs/sql-model.png)
+<p>
+  <img width="65%" src="docs/sql-model.png">
+</p>
 
 ---

@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+
+  db:
+    container_name: postgres-container
+    image: postgres:14.4-alpine
+    restart: always
+    ports:
+      - "54320:5432"
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    env_file:
+      - env/postgres.env
