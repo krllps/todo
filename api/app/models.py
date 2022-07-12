@@ -15,7 +15,7 @@ class User(Base):
     registered_on = sqla.Column(sqla.DateTime, nullable=False, server_default=sqla.func.now())
     data_of_birth = sqla.Column(sqla.Date, nullable=True, default=None)
 
-    tasks = relationship("Task", backref="user")
+    tasks = sqla.orm.relationship("Task", backref="user")
 
     def __repr__(self):
         return f"id: {self.id}, name: {self.name}, email: {self.email}"
@@ -32,7 +32,7 @@ class Task(Base):
     due = sqla.Column(sqla.DateTime, nullable=False, index=True)
     is_checked = sqla.Column(sqla.Boolean, nullable=False, default=False, index=True)
 
-    user_id = sqla.Column(sqla.Integer, sqla.ForeignKey("user.id"))
+    user_id = sqla.Column(sqla.Integer, sqla.ForeignKey("user.id", ondelete="CASCADE"))
 
     def __repr__(self):
         return f"id: {self.id}, user_id: {self.user_id}, name: {self.name}, due: {self.due}," \
