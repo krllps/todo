@@ -6,8 +6,8 @@ services:
     container_name: postgres-container
     image: postgres:14.4-alpine
     restart: always
-    ports:
-      - "54320:5432"
+    expose:
+      - 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
@@ -26,14 +26,19 @@ services:
         while !</dev/tcp/db/5432;
         do sleep 1;
         done;
+        alembic upgrade head;
         uvicorn app.main:app --host 0.0.0.0 --reload
       "
     volumes:
       - ./api/app:/code/app
+      - ./api/alembic.ini:/code/alembic.ini
+      - ./api/migrations:/code/migrations
     ports:
       - "8000:8000"
     networks:
       - main
+    env_file:
+      - env/postgres.env
 
 networks:
   main:
