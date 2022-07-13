@@ -11,6 +11,7 @@ class User(Base):
     id = sqla.Column(sqla.Integer, primary_key=True)
     name = sqla.Column(sqla.String(50), nullable=False, unique=True, index=True)
     email = sqla.Column(sqla.String(100), nullable=True, default=None, unique=True, index=True)
+    telegram = sqla.Column(sqla.String(50), nullable=True, default=None, unique=True, index=True)
     password = sqla.Column(sqla.String(100), nullable=False)
     registered_on = sqla.Column(sqla.DateTime, nullable=False, server_default=sqla.func.now())
     data_of_birth = sqla.Column(sqla.Date, nullable=True, default=None)
@@ -33,7 +34,20 @@ class Task(Base):
     is_checked = sqla.Column(sqla.Boolean, nullable=False, default=False, index=True)
 
     user_id = sqla.Column(sqla.Integer, sqla.ForeignKey("user.id", ondelete="CASCADE"))
+    reminder = sqla.orm.relationship("Reminder", back_populates="task", uselist=False)
 
     def __repr__(self):
         return f"id: {self.id}, user_id: {self.user_id}, name: {self.name}, due: {self.due}," \
                f" is_checked: {self.is_checked}"
+
+
+class Reminder(Base):
+    __tablename__ = "reminder"
+
+    id = sqla.Column(sqla.Integer, primary_key=True)
+    via_email = sqla.Column(sqla.Boolean, nullable=False, default=False)
+    via_telegram = sqla.Column(sqla.Boolean, nullable=False, default=False)
+    remind_on = sqla.Column(sqla.DateTime, nullable=False, index=True)
+
+    task_id = sqla.Column(sqla.Integer, sqla.ForeignKey("task.id"))
+    task = sqla.orm.relationship("Task", back_populates="reminder")
