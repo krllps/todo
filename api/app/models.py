@@ -1,34 +1,49 @@
 from .db import Base
 
 import sqlalchemy as sqla
-from sqlalchemy.orm import relationship
+from sqlalchemy.schema import CheckConstraint
+from sqlalchemy.orm import relationship, validates
+
+from datetime import datetime
 
 
 class User(Base):
     __tablename__ = "user"
-    __mapper_args__ = {"eager_defaults": True}  # required in order to access columns with server defaults
+    __mapper_args__ = {
+        "eager_defaults": True,  # required in order to access columns with server defaults
+    }
+    __table_args__ = (
+        CheckConstraint("password >= 8"),  # db level validator (isn't discovered by alembic --autogenerate)
+    )
 
     id = sqla.Column(sqla.Integer, primary_key=True)
-    name = sqla.Column(sqla.String(50), nullable=False, unique=True, index=True)
-    email = sqla.Column(sqla.String(100), nullable=True, default=None, unique=True, index=True)
-    telegram = sqla.Column(sqla.String(50), nullable=True, default=None, unique=True, index=True)
-    password = sqla.Column(sqla.String(100), nullable=False)
+    name = sqla.Column(sqla.String(64), nullable=False, unique=True, index=True)
+    email = sqla.Column(sqla.String(128), nullable=True, default=None, unique=True, index=True)
+    telegram = sqla.Column(sqla.String(64), nullable=True, default=None, unique=True, index=True)
+    password = sqla.Column(sqla.String(128), nullable=False)
     registered_on = sqla.Column(sqla.DateTime, nullable=False, server_default=sqla.func.now())
-    data_of_birth = sqla.Column(sqla.Date, nullable=True, default=None)
+    date_of_birth = sqla.Column(sqla.Date, nullable=True, default=None)
 
     tasks = sqla.orm.relationship("Task", backref="user")
 
     def __repr__(self):
-        return f"id: {self.id}, name: {self.name}, email: {self.email}"
+        return f"id: {self.id}, name: {self.name}, email: {self.email}, telegram: {self.telegram}, " \
+               f"registered_on: {self.registered_on}, date_of_birth: {self.date_of_birth}"
+
+    @validates("password")  # orm level validator
+    def password_must_be_longer_than_eight_chars(self, key, value):
+        if len(value) < 8:
+            raise ValueError("password must be longer than eight characters")
+        return value
 
 
 class Task(Base):
     __tablename__ = "task"
-    __mapper_args__ = {"eager_defaults": True}  # required in order to access columns with server defaults
+    __mapper_args__ = {"eager_defaults": True}
 
     id = sqla.Column(sqla.Integer, primary_key=True)
-    name = sqla.Column(sqla.String(100), nullable=False, index=True)
-    description = sqla.Column(sqla.String(300), nullable=True, default=None)
+    name = sqla.Column(sqla.String(128), nullable=False, index=True)
+    description = sqla.Column(sqla.String(512), nullable=True, default=None)
     created_on = sqla.Column(sqla.DateTime, nullable=True, server_default=sqla.func.now())
     due = sqla.Column(sqla.DateTime, nullable=False, index=True)
     is_checked = sqla.Column(sqla.Boolean, nullable=False, default=False, index=True)
@@ -39,6 +54,12 @@ class Task(Base):
     def __repr__(self):
         return f"id: {self.id}, user_id: {self.user_id}, name: {self.name}, due: {self.due}," \
                f" is_checked: {self.is_checked}"
+
+    @validates("due")
+    def due_date_must_not_be_in_the_past(self, key, value):
+        if value < datetime.now():
+            raise ValueError("due date must not be in the past")
+        return value
 
 
 class Reminder(Base):
